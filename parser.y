@@ -166,7 +166,7 @@ cmd_flux_ctrl   : TK_PR_IF '(' expr ')' body {$$ = $1; $$->add_child($3); $$->ad
                 | TK_PR_WHILE '(' expr ')' body {$$ = $1; $$->add_child($3); $$->add_child($5);}
 
 
-cmd_func_call: name_func '(' list_arg ')'    {$$ = $1; $$->add_child($3);}
+cmd_func_call: name_func '(' list_arg ')'    {$$ = $1; $$->reg_func_call(true); $$->add_child($3);}
              ;
 
 func_call_param : name_func '(' list_arg ')' {$$ = $1; $$->add_child($3);}
