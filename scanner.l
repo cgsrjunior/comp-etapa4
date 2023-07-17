@@ -3,6 +3,7 @@
 
 %option noyywrap
 %option yylineno
+%option nounput
 %x MULTI_LINE_COMMENT
 %x SINGLE_LINE_COMMENT
 

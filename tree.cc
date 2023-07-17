@@ -58,6 +58,7 @@ string AstNode::formatstring() {
         catch (const exception& er){
             std::cout << er.what() << endl;
         }
+    return this->lex.token_val;
 }
 
 void AstNode::reg_func_call(bool value){ 
