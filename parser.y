@@ -75,10 +75,9 @@ int yyerror (const char *message);
 %type<valor_lexico> parenthesis_prec
 %type<valor_lexico> operand
 %type<valor_lexico> list_arg
-%type<valor_lexico> cmd_return
-%type<valor_lexico> cmd_atrib
 %type<valor_lexico> cmd_var
-%type<valor_lexico> atrib_var
+%type<valor_lexico> cmd_atrib
+%type<valor_lexico> cmd_return
 %type<valor_lexico> list_id_atrib
 %type<valor_lexico> id_atrib
 %type<valor_lexico> lit
@@ -91,27 +90,26 @@ int yyerror (const char *message);
 %%
 
 programa    : list_decl {$$ = $1; arvore = $$;}
-            ;            
+            ;
         
-list_decl   : decl list_decl {
-              if($1!=nullptr && $2!=nullptr){
+list_decl   : list_decl decl {
+              if($2!=nullptr){
+                  $$ = $2;
+                  $$->add_child($1);
+               }
+               else if($1 != nullptr){
                   $$ = $1;
-                  $$->add_child($2);
                }
-               else if($1 !=nullptr){
-                  $$ = $1; 
-               }
-               else if ($2 != nullptr){
+               else if($2 !=nullptr){
                   $$ = $2;
                }
-               else{
+               else
                   $$ = nullptr;
-               }
             }
             | {$$ = nullptr;}
             ;
 
-decl        : var  {$$ = $1;}
+decl        : var  {$$ = nullptr;}
             | func {$$ = $1;}
             ;
 
@@ -141,24 +139,26 @@ body        : '{' list_cmd '}' {$$ = $2;}
             ;
 
 
-list_cmd    :  cmd ';' list_cmd {
-               if($1 != nullptr){
-                  $$  = $1;
-                  $$->add_child($3);
+list_cmd    :  list_cmd cmd ';'  {
+               if($2 != nullptr){
+                  $$  = $2;
+                  $$->add_child($1);
                }
-               else{
-                  $$ = $3;
+               else if($1 != nullptr){
+                  $$ = $1;
                }
+               else
+                  $$ = nullptr;
             }
             |  {$$ = nullptr;}
             ;
 
-cmd         : cmd_var         {$$ = $1;}
+cmd         : cmd_var         {$$ = $1; cout << "<=" << endl;}
             | cmd_atrib       {$$ = $1;}
             | cmd_func_call   {$$ = $1;}
-            | cmd_return      {$$ = $1;}
+            | cmd_return      {$$ = $1; cout << "return" << endl;}
             | cmd_flux_ctrl   {$$ = $1;}
-            | body            {$$ = $1;}
+            | body            {$$ = $1; cout << "body" << endl;}
             ;
 
 cmd_flux_ctrl   : TK_PR_IF '(' expr ')' body {$$ = $1; $$->add_child($3); $$->add_child($5);}
@@ -241,36 +241,43 @@ operand     : id_label        {$$ = $1;}
             ;
 
 
-list_arg    : list_arg ',' expr {$$ = $1; $$->add_child($3);}
+list_arg    : list_arg ',' expr {$$ = $3; $$->add_child($1);}
             | expr {$$ = $1;}
+            ;
+
+cmd_var     : type list_id_atrib {$$ = $2; /*cout << "getting atrib rule" << endl; */}
+            ;
+
+
+cmd_atrib   : id_label '=' expr {$$ = $2; $$->add_child($1); $$->add_child($3);}
             ;
 
 cmd_return  : TK_PR_RETURN expr {$$ = $1; $$->add_child($2);}
             ;
 
-cmd_atrib   : id_label '=' expr {$$ = $2; $$->add_child($1); $$->add_child($3);}
-            ;
-
-cmd_var     : atrib_var {$$ = $1;}
-            ;
-
-atrib_var   : type list_id_atrib {$$ = $2;}
-            ;
 
 list_id_atrib   : list_id_atrib ',' id_atrib{
-                  if ($$ != nullptr) {
+                  if ($3 != nullptr) {
                         $$ = $3; 
                         $$->add_child($1);
-                  } else {
+                  } else if($1 != nullptr) {
                         $$ = $1;
                   }
+                  else
+                        $$ = nullptr;
                 }
-                | id_atrib {$$ = $1;}
-                ;
-
-id_atrib        : id_label TK_OC_LE lit {$$ = $2; $$->add_child($1); $$->add_child($3);}
+                | list_id_atrib ',' id_label TK_OC_LE lit{
+                  $$ = $4;
+                  $$->add_child($1);
+                  $$->add_child($3);
+                  $$->add_child($5);
+                }
                 | id_label {$$ = nullptr;}
                 ;
+
+id_atrib        : id_label {$$ = nullptr;}
+                ;
+
 
 lit             : TK_LIT_INT   {$$ = $1;}
                 | TK_LIT_FLOAT {$$ = $1;}
