@@ -27,6 +27,10 @@ void AstNode::add_child(AstNode* child) {
     }
 }
 
+TkType AstNode::get_type(){
+    return this->lex.token_type;
+}
+
 string AstNode::formatstring() {
         try{
             switch (this->lex.token_type) {
@@ -98,5 +102,45 @@ void exporta(void* tree) {
     }
 
     
+}
+
+int checkAtrib(shared_ptr<AstNode> node){
+    if (node != nullptr)
+        if (node->lex.token_val.find("<="))
+            return 1;
+        else
+            return 0;
+}
+
+shared_ptr<AstNode> lastNode(shared_ptr<AstNode> node){
+    
+    if(node->children.empty()){
+        return node;
+    }
+
+    shared_ptr<AstNode> last_element = node->children.back();
+
+/*  == TODO TOMORROW
+    while(node->children->lex.token_type != TkType::TK_ID){
+        cout << "AAAAAAAAAAAAAAAAAAAAAAAA" << endl;
+    }
+
+
+    Tipo tipo = nodo->filho[ultimo]->lexico->tipo;
+    char valor = nodo->filho[ultimo]->lexico->valor;
+
+    while (tipo == OPERADOR_COMPOSTO  tipo == CARACTERE_ESPECIAL   tipo == PALAVRA_RESERVADA)
+    {
+        nodo = nodo->filho[ultimo];
+        if(nodo->num_filhos == 0)
+        {
+            break;
+        }
+        ultimo = nodo->num_filhos - 1;
+        tipo = nodo->filho[ultimo]->lexico->tipo;
+        valor = nodo->filho[ultimo]->lexico->valor;
+    }
+    return nodo;
+*/
 }
 

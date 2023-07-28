@@ -1,7 +1,7 @@
-#pragma once
+#ifndef TABLE_HH
+#define TABLE_HH
 #include <vector>
-#include <string>
-#include <memory>
+#include <map>
 #include "tree.hh"
 
 using namespace std;
@@ -20,11 +20,11 @@ enum class NatType {
 
 struct Table {
     int line;
-    int column;
     NatType nature;
     string type;
-    string data;
+    AstNode* data;
 };
+
 
 //Structure to declare whenever we push/pop tables
 struct StackTable {
@@ -32,15 +32,15 @@ struct StackTable {
 
     void push_table(Table& tb);
     void pop_table(Table& tb); //Remove the table on the top of the program
-    StackTable return_top(Table& table); //Pick up the last table whenever needed
+    Table& return_top(); //Pick up the last table whenever needed
     int find_symbol_table(string value); //Returned the index found in the table
 
     bool value_declared(string value);
-    bool value_not_declared(string value);
+
+    Table get_symbol_table(string value);
 };
 
-TkType inference_type(TkType id_type_1, TkType d_type_2);
-
+TkType inference_type(TkType id_type_1, TkType id_type_2);
 
 /*
 Notas de aula
@@ -54,3 +54,4 @@ uso correto tipos (ou eh variavel ou eh funcao)
 
 Achar a entrada da tabela que tem o lexema
 */
+#endif  //TABLE_HH

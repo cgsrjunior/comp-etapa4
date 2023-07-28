@@ -13,6 +13,7 @@ enum class TkType {
     TK_LIT_INT, // int
     TK_LIT_FLOAT, // float
     TK_LIT_BOOL, // bool
+    TK_TYPE_ERROR //Error signaling
 };
 
 const vector<char> invalid_chars {',', ';', '(', ')', '{', '}', '[', ']'};
@@ -39,6 +40,8 @@ struct AstNode {
         string formatstring();
 
         void reg_func_call(bool value);
+
+        TkType get_type();
 };
 
 //Smart pointer for the tree
@@ -49,3 +52,9 @@ void exporta(void* tree);
 
 //Function to print the tree
 void print_tree(shared_ptr<AstNode> tree);
+
+//Get last node
+shared_ptr<AstNode> lastNode(shared_ptr<AstNode> node);
+
+//Check node attribute
+int checkAtrib(shared_ptr<AstNode> tree);
