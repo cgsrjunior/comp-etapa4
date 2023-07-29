@@ -5,15 +5,20 @@
 %{
 #include <iostream>
 #include <memory>
+#include "table.hh"
 extern int get_line_number(void);
 extern void *arvore;
 int yylex(void);
 int yyerror (const char *message);
+using namespace std;
+StackTable program_table{};
+vector<SymbolTablePair> global_variables = {};
 %}
 
 %code requires{
       #include <memory>
       #include "tree.hh"
+      #include "table.hh"
 }
 
 %union {
@@ -90,10 +95,10 @@ int yyerror (const char *message);
 
 %%
 
-programa    : list_decl {$$ = $1; arvore = $$;}
+programa    : {program_table.initialize_stack();} list_decl {$$ = $2; arvore = $$; program_table.pop_table();}
             ;
         
-list_decl   : list_decl decl {
+list_decl   : decl list_decl {
               if($2!=nullptr && $1!=nullptr){
                   $$ = $1;
                   $$->add_child($2);
@@ -110,11 +115,18 @@ list_decl   : list_decl decl {
             | {$$ = nullptr;}
             ;
 
-decl        : var  {$$ = nullptr;}
+decl        : var  {$$ = $1; global_variables.clear();}
             | func {$$ = $1;}
             ;
 
-var         : type list_id ';' {$$ = nullptr;}
+var         : type list_id ';' {$$ = nullptr;
+                  for(auto p_key : global_variables){
+                        Table& symbol = p_key.second;
+                        symbol.type = $1->get_type();
+                        program_table.stack_up(p_key);
+                  }
+                  delete $1;
+            }
             ;
 
 list_id     : list_id ',' id_label {$$ = nullptr;}
@@ -126,7 +138,19 @@ type        : TK_PR_INT   {$$ = nullptr;}
             | TK_PR_BOOL  {$$ = nullptr;}
             ;
 
-func        : name_func '(' list_param ')' TK_OC_MAP type body {$$ = $1; $$->add_child($7);}
+func        : name_func {
+               if (program_table.value_declared($1->get_type())) {
+			send_error_message($1, ERR_DECLARED);
+                  exit(ERR_DECLARED);
+               }
+               Table symbol{
+                  $1->get_line_number(),
+                  NatType::ID,
+                  TkType::TK_TYPE_ERROR,
+                  nullptr
+               };
+               program_table.stack_up   
+            } '(' list_param ')' TK_OC_MAP type body {$$ = $1; $$->add_child($7);}
             ;
 
 
@@ -158,12 +182,12 @@ list_cmd    :  cmd ';' list_cmd  {
             |  {$$ = nullptr;}
             ;
 
-cmd         : cmd_var         {$$ = $1; cout << "<=" << endl;}
+cmd         : cmd_var         {$$ = $1; /*cout << "<=" << endl;*/}
             | cmd_atrib       {$$ = $1;}
             | cmd_func_call   {$$ = $1;}
-            | cmd_return      {$$ = $1; cout << "return" << endl;}
+            | cmd_return      {$$ = $1; /*cout << "return" << endl;*/}
             | cmd_flux_ctrl   {$$ = $1;}
-            | body            {$$ = $1; cout << "body" << endl;}
+            | body            {$$ = $1; /*cout << "body" << endl;*/}
 
             ;
 
@@ -211,7 +235,24 @@ lit             : TK_LIT_INT   {$$ = $1;}
                 | TK_LIT_FALSE {$$ = $1;}
                 ;
 
-id_label: TK_IDENTIFICADOR {$$ = $1;}
+id_label: TK_IDENTIFICADOR {
+            if(program_table.value_declared($1->get_type())){
+                  //TODO send error message
+                  //TODO exit program
+                  send_error_message($1, ERR_DECLARED);
+                  exit(ERR_DECLARED);
+            }
+            Table symbol{
+                  $1->get_line_number(),
+                  NatType::ID,
+                  TkType::TK_TYPE_ERROR,
+                  nullptr
+            };
+            new_pair = make_pair($1->get_type, symbol);
+            //Adding global variables to the stack
+            global_variables.push_back(new_pair);
+            $$=nullptr; delete $1;
+        }
         ;     
 
 

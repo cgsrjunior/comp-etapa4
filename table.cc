@@ -2,19 +2,24 @@
 #include <string>
 #include <algorithm>
 #include <map>
+#include <vector>
 #include "table.hh"
 
 using namespace std;
 
-void StackTable::push_table(Table& tb) { 
+void StackTable::initialize_stack(){
+    this->stack_table.push_back(SymbolTablePair{});
+}
+
+void StackTable::push_table(SymbolTablePair& tb) { 
     this->stack_table.push_back(tb); 
 }
 
-void StackTable::pop_table(Table& tb) { 
+void StackTable::pop_table() { 
     this->stack_table.pop_back(); 
 }
 
-Table& StackTable::return_top(){
+SymbolTablePair& StackTable::return_top(){
     this->stack_table.back();
 }
 
@@ -23,7 +28,7 @@ Table& StackTable::return_top(){
 int StackTable::find_symbol_table(string value) {
     int i = this->stack_table.size()-1;
     for (i; i>=0; i--) {
-        if (this->stack_table[i].data->lex.token_val.find(value)){
+        if (this->stack_table[i].contains(value)){
             break;
         }
     }
@@ -32,6 +37,12 @@ int StackTable::find_symbol_table(string value) {
 
 bool StackTable::value_declared(string value){
     return find_symbol_table(value) >= 0;
+}
+
+void StackTable::stack_up(string tk_value, Table symbol){
+    if (this->return_top().contains(tk_value)) {
+        this->return_top().insert({tk_value, symbol});
+    }
 }
 
 TkType inference_type (TkType id_type_1, TkType id_type_2) {
@@ -55,4 +66,30 @@ TkType inference_type (TkType id_type_1, TkType id_type_2) {
          return TkType::TK_TYPE_ERROR;
 }
 
-int get_incompatible_type();
+int get_bad_usage_err(NatType expected, NatType received) {
+    if (expected != received)
+        switch (expected) {
+            case NatType::ID:
+                return ERR_VARIABLE;
+            case NatType::FUNC:
+                return ERR_FUNCTION;
+            case NatType::LIT: // não acontece, apenas para omitir warning
+                return 0;
+        }
+    return 0;
+}
+
+
+Table StackTable::get_symbol_table(string key) {
+    int index = this->find_symbol_table(key);
+    if (index >= 0) {
+        return this->stack_table[index][key];
+    }
+    else exit(ERR_UNDECLARED);
+}
+
+/*
+int get_incompatible_type(){
+
+}
+*/
