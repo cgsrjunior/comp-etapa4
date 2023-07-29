@@ -133,14 +133,14 @@ list_id     : list_id ',' id_label {$$ = nullptr;}
             | id_label {$$ = nullptr;}
             ;
 
-type        : TK_PR_INT   {$$ = nullptr;}
-            | TK_PR_FLOAT {$$ = nullptr;}
-            | TK_PR_BOOL  {$$ = nullptr;}
+type        : TK_PR_INT   {$$ = $1; $$->set_type(TkType::TK_PR_INT);}
+            | TK_PR_FLOAT {$$ = $1; $$->set_type(TkType::TK_PR_FLOAT);}
+            | TK_PR_BOOL  {$$ = $1; $$->set_type(TkType::TK_PR_BOOL);}
             ;
 
 func        : name_func {
                if (program_table.value_declared($1->get_type())) {
-			send_error_message($1, ERR_DECLARED);
+			throw_error_message($1, ERR_DECLARED);
                   exit(ERR_DECLARED);
                }
                Table symbol{
@@ -159,10 +159,10 @@ list_param  : list_param ',' id_param {$$ = nullptr;}
             | {$$ = nullptr;}
             ;
 
-
-body        : '{' list_cmd '}' {$$ = $2;}
+// Push the table whenever find a command to stack up the context
+// and after finish the block, remove table from stack
+body        : {program_table.initialize_stack();} '{' list_cmd '}' {$$ = $3; program_table.pop_table();}
             ;
-
 
 list_cmd    :  cmd ';' list_cmd  {
                if($3 != nullptr && $1 != nullptr){
@@ -229,9 +229,39 @@ id_atrib        : id_label {$$ = nullptr;}
                 ;
 
 
-lit             : TK_LIT_INT   {$$ = $1;}
-                | TK_LIT_FLOAT {$$ = $1;}
-                | TK_LIT_TRUE  {$$ = $1;}
+lit             : TK_LIT_INT   {
+                  $$ = $1;
+                  $$->set_type(TkType::TK_LIT_INT);
+                  Table symbol{
+                        $1->get_line_number(),
+                        NatType::LIT,
+                        TkType::TK_LIT_INT,
+                        $1
+                  };
+                  program_table.stack_up($1->get_type, symbol);
+                }
+                | TK_LIT_FLOAT {
+                  $$ = $1;
+                  $$->set_type(TkType::TK_LIT_FLOAT);
+                  Table symbol{
+                        $1->get_line_number(),
+                        NatType::LIT,
+                        TkType::TK_LIT_FLOAT,
+                        $1
+                  };
+                  program_table.stack_up($1->get_type, symbol);
+                }
+                | TK_LIT_TRUE  {
+                  $$ = $1;
+                  $$->set_type(TkType::TK_LIT_BOOL);
+                  Table symbol{
+                        $1->get_line_number(),
+                        NatType::LIT,
+                        TkType::TK_LIT_BOOL,
+                        $1
+                  };
+                  program_table.stack_up($1->get_type, symbol);
+                }
                 | TK_LIT_FALSE {$$ = $1;}
                 ;
 
@@ -239,7 +269,7 @@ id_label: TK_IDENTIFICADOR {
             if(program_table.value_declared($1->get_type())){
                   //TODO send error message
                   //TODO exit program
-                  send_error_message($1, ERR_DECLARED);
+                  throw_error_message($1, ERR_DECLARED);
                   exit(ERR_DECLARED);
             }
             Table symbol{
@@ -299,41 +329,81 @@ bin_sev_expr: TK_OC_OR {$$ = $1;}
              ;
 
 expr: expr_1 {$$ = $1;} 
-    | expr bin_sev_expr expr_1 {$$ = $2; $$->add_child($1); $$->add_child($3);}
+    | expr bin_sev_expr expr_1 {
+      $$ = $2; 
+      $$->add_child($1); 
+      $$->add_child($3);
+      $$->set_type(inference_type($1->get_type(), $3->get_type()));
+      //TODO: We need to check types?
+    }
     | {$$ = nullptr;}
     ;
 
 expr_1: expr_2 {$$ = $1;}
-      | expr_1 bin_six_expr expr_2 {$$ = $2; $$->add_child($1); $$->add_child($3);}
+      | expr_1 bin_six_expr expr_2 {
+            $$ = $2; 
+            $$->add_child($1); 
+            $$->add_child($3);
+            $$->set_type(inference_type($1->get_type(), $3->get_type()));
+            //TODO: We need to check types?
+      }
       ;
 
 expr_2: expr_3 {$$ = $1;}
-      | expr_2 bin_fif_expr expr_3 {$$ = $2; $$->add_child($1); $$->add_child($3);}
+      | expr_2 bin_fif_expr expr_3 {
+            $$ = $2; 
+            $$->add_child($1); 
+            $$->add_child($3);
+            $$->set_type(inference_type($1->get_type(), $3->get_type()));
+            //TODO: We need to check types?
+      }
       ;
 
 expr_3: expr_4                     {$$ = $1;}
-      | expr_3 bin_fou_expr expr_4 {$$ = $2; $$->add_child($1); $$->add_child($3);}
+      | expr_3 bin_fou_expr expr_4 {
+            $ = $2; 
+            $$->add_child($1); 
+            $$->add_child($3);
+            $$->set_type(inference_type($1->get_type(), $3->get_type()));
+            //TODO: We need to check types?
+      }
       ;
 
 expr_4: expr_5                     {$$ = $1;}
-      | expr_4 bin_thr_expr expr_5 {$$ = $2; $$->add_child($1); $$->add_child($3);}
+      | expr_4 bin_thr_expr expr_5 {
+            $$ = $2; 
+            $$->add_child($1); 
+            $$->add_child($3);
+            $$->set_type(inference_type($1->get_type(), $3->get_type()));
+            //TODO: We need to check types?
+      }
       ;
 
 expr_5: unary_expr                     {$$ = $1;}
-      | expr_5 bin_sec_expr unary_expr {$$ = $2; $$->add_child($1); $$->add_child($3);}
+      | expr_5 bin_sec_expr unary_expr {
+            $$ = $2; 
+            $$->add_child($1); 
+            $$->add_child($3);
+            $$->set_type(inference_type($1->get_type(), $3->get_type()));
+            //TODO: We need to check types?
+      }
       ;
 
 unary_expr: parenthesis_prec               {$$ = $1;}
-          | unary_operand parenthesis_prec {$$ = $1; $$->add_child($2); /* cout << $2 << endl; */}
+          | unary_operand parenthesis_prec {
+            $$ = $1; 
+            $$->add_child($2); /* cout << $2 << endl; */
+            $$->set_type($2->get_type());
+          }
           ;
 
 parenthesis_prec    :  operand      {$$ = $1;}
                     | '(' expr ')'  {$$ = $2;}
                     ;
 
-operand     : id_label        {$$ = $1;}
-            | lit             {$$ = $1;}
-            | func_call_param {$$ = $1;}
+operand     : id_label        {$$ = $1; $$->set_type($1->get_type());}
+            | lit             {$$ = $1; $$->set_type($1->get_type());}
+            | func_call_param {$$ = $1; $$->set_type($1->get_type());}
             ;
 
 
@@ -342,7 +412,17 @@ list_arg    : list_arg ',' expr {$$ = $3; $$->add_child($1);}
             ;
 
 
-cmd_atrib   : id_label '=' expr {$$ = $2; $$->add_child($1); $$->add_child($3);}
+cmd_atrib   : id_label '=' expr {
+              $$ = $2; 
+              $$->add_child($1); 
+              $$->add_child($3);
+              //Verify if the variable receive the correct value
+              if(get_bad_atrib_error($1->get_type(),$2->get_type) != 0){
+                  throw_error_message($3, get_bad_atrib_error($1->get_type(),$2->get_type));
+                  exit(get_bad_atrib_error($1->get_type(),$2->get_type));
+              }
+              $$->set_type($1->get_type());
+            }
             ;
 
 cmd_return  : TK_PR_RETURN expr {$$ = $1; $$->add_child($2);}
@@ -360,4 +440,30 @@ int yyerror (const char *message)
 {
     printf("Error line %d: %s\n", get_line_number(), message);
     return 1;
+}
+
+void throw_error_message (AstNode* node, int error_code) {
+    int line_number = node->get_line_number();
+    string token_val = node->formatstring();
+
+
+//    std::string token_type = node_type_to_string(node->get_node_type());
+
+    switch(error_code){
+      case ERR_DECLARED:
+            cout << "[error found on line " << line_no
+                  << "] variable " << token_val << " already be declared." << endl;
+      case ERR_UNDECLARED:
+            cout << "[error found on line " << line_no
+                  << "] variable " << token_type << " >> wasn't declared." << endl;
+      case ERR_VARIABLE:
+            cout << "[error found on line " << line_no
+                  << "] inappropriate usage of variable " << token_type << "." << endl;
+      case ERR_FUNCTION:
+            cout << "[error found on line " << line_no
+                  << "] inappropriate usage of function " << token_type << "." << endl;
+      default:
+            cout << "[error found on line " << line_no
+                  << "] conversion " << token_type << " >> undentified error." << endl;
+    }
 }

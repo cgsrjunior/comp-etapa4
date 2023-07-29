@@ -40,7 +40,7 @@ bool StackTable::value_declared(string value){
 }
 
 void StackTable::stack_up(string tk_value, Table symbol){
-    if (this->return_top().contains(tk_value)) {
+    if (this->return_top().contains(tk_value) != true) {
         this->return_top().insert({tk_value, symbol});
     }
 }
@@ -66,7 +66,7 @@ TkType inference_type (TkType id_type_1, TkType id_type_2) {
          return TkType::TK_TYPE_ERROR;
 }
 
-int get_bad_usage_err(NatType expected, NatType received) {
+int throw_bad_atrib_error(NatType expected, NatType received) {
     if (expected != received)
         switch (expected) {
             case NatType::ID:

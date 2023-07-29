@@ -31,6 +31,18 @@ TkType AstNode::get_type(){
     return this->lex.token_type;
 }
 
+void AstNode::set_type(TkType type){
+    this->lex.token_type = type;
+}
+
+string AstNode::get_value(){
+    return this->lex.token_val;
+}
+
+void AstNode::set_value(string value){
+    this->lex.token_val = value;
+}
+
 string AstNode::formatstring() {
         try{
             switch (this->lex.token_type) {

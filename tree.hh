@@ -42,6 +42,12 @@ struct AstNode {
         void reg_func_call(bool value);
 
         TkType get_type();
+
+        void set_type(TkType type);
+
+        string get_value();
+
+        void set_value(string value);
 };
 
 //Smart pointer for the tree
