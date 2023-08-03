@@ -1,12 +1,12 @@
-#ifndef TABLE_HH
-#define TABLE_HH
+#pragma once
 #include <vector>
-#include <map>
+#include <string>
 #include "tree.hh"
 
 using namespace std;
 
-enum class NatType {
+//2.1 field request nature
+enum class Nature {
     LIT,
     ID,
     FUNC
@@ -18,40 +18,45 @@ enum class NatType {
 #define ERR_VARIABLE 20 //2.3
 #define ERR_FUNCTION 21 //2.3
 
-struct Table {
+struct Symbol {
     int line;
-    NatType nature;
+    Nature nature;
     string type;
     AstNode* data;
+};
+
+struct SymbolList{
+    string label; //Token Value
+    Symbol data;
 };
 
 
 //Structure to declare whenever we push/pop tables
 struct StackTable {
-    vector<Table> stack_table {};
+    vector<SymbolList> stack_table {};
 
-    void push_table(Table& tb);
-    void pop_table(Table& tb); //Remove the table on the top of the program
-    Table& return_top(); //Pick up the last table whenever needed
-    int find_symbol_table(string value); //Returned the index found in the table
+    //Initialize the stack
+    inline void create_new_stack(){ this->stack_table.push_back(SymbolList{});}
 
+    //Get and set for stacktable
+    inline void push_table(SymbolList& tb) { this->stack_table.push_back(tb); }
+    inline void pop_table()                { this->stack_table.pop_back(); } //Remove the table on the top of the program
+
+    //Pick up the last table whenever needed
+    SymbolList& return_top()               { return this->stack_table.back(); }
+
+    int find_symbol_table(string token_value); //Returned the index found in the table
+
+
+
+    //Not working as expected
     bool value_declared(string value);
 
-    Table get_symbol_table(string value);
+    //Check declarations for raise ERR_DECLARED/UNDECLARED
+    void create_variable_entry(string token_value, Symbol ast_symbol);
+    void create_atribution_entry(string token_value, Symbol ast_symbol);
+
+    Symbol get_symbol_table(string value);
 };
 
 TkType inference_type(TkType id_type_1, TkType id_type_2);
-
-/*
-Notas de aula
-Empilha primeira tabela antes inicio do programa
-
-Fecha apos programa
-Fecha apos lista de comandos simples
-FREE OPCIONAL
-
-uso correto tipos (ou eh variavel ou eh funcao)
-
-Achar a entrada da tabela que tem o lexema
-*/
-#endif  //TABLE_HH

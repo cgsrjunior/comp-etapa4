@@ -6,33 +6,51 @@
 
 using namespace std;
 
-void StackTable::push_table(Table& tb) { 
-    this->stack_table.push_back(tb); 
-}
-
-void StackTable::pop_table(Table& tb) { 
-    this->stack_table.pop_back(); 
-}
-
-Table& StackTable::return_top(){
-    this->stack_table.back();
-}
-
 //This code will find the column that the element was given
 //If a element cannot be found, return -1
-int StackTable::find_symbol_table(string value) {
-    int i = this->stack_table.size()-1;
-    for (i; i>=0; i--) {
-        if (this->stack_table[i].data->lex.token_val.find(value)){
+int StackTable::find_symbol_table(string token_value) {
+    int i = 0;
+    for (i = this->stack_table.size()-1; i>=0; i--) {
+        if (this->stack_table[i].label.compare(token_value) == 0){
             break;
         }
     }
     return i;
 }
 
+
+//This function should be used to check if we launch a declared or undeclared
+// variable error
 bool StackTable::value_declared(string value){
     return find_symbol_table(value) >= 0;
 }
+
+void StackTable::create_variable_entry(string token_value, Symbol ast_symbol){
+    //Check if variable exists before and in case of non-existant,
+    //create the variable entry in the stack
+    SymbolList new_data{
+        token_value,
+        ast_symbol
+    };
+        this->stack_table.push_back(new_data);
+}
+
+void StackTable::create_atribution_entry(string token_value, Symbol ast_symbol){
+    //Check if variable exists before and in case of existant,
+    //create the atribution symbol entry in the stack
+    if(value_declared(token_value)){
+        SymbolList new_data{
+            token_value,
+            ast_symbol
+        };
+        this->stack_table.push_back(new_data);
+    }
+    else{
+        exit(ERR_UNDECLARED);
+    }   
+}
+
+
 
 TkType inference_type (TkType id_type_1, TkType id_type_2) {
 /*
@@ -54,5 +72,3 @@ TkType inference_type (TkType id_type_1, TkType id_type_2) {
     else
          return TkType::TK_TYPE_ERROR;
 }
-
-int get_incompatible_type();

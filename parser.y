@@ -5,15 +5,22 @@
 %{
 #include <iostream>
 #include <memory>
+#include "tree.hh"
+#include "table.hh"
+
 extern int get_line_number(void);
+void throw_error_message (AstNode* node, int error_code);
 extern void *arvore;
 int yylex(void);
 int yyerror (const char *message);
+
+StackTable stack_table{};
 %}
 
 %code requires{
       #include <memory>
       #include "tree.hh"
+      #include "table.hh"
 }
 
 %union {
@@ -90,7 +97,11 @@ int yyerror (const char *message);
 
 %%
 
-programa    : list_decl {$$ = $1; arvore = $$;}
+programa    : {stack_table.create_new_stack();} list_decl {
+               $$ = $2;
+               arvore = $$; 
+               stack_table.pop_table();
+            }
             ;
         
 list_decl   : list_decl decl {
@@ -114,7 +125,10 @@ decl        : var  {$$ = nullptr;}
             | func {$$ = $1;}
             ;
 
-var         : type list_id ';' {$$ = nullptr;}
+var         : type list_id ';' {
+              $$ = nullptr;
+
+            }
             ;
 
 list_id     : list_id ',' id_label {$$ = nullptr;}
@@ -158,12 +172,12 @@ list_cmd    :  cmd ';' list_cmd  {
             |  {$$ = nullptr;}
             ;
 
-cmd         : cmd_var         {$$ = $1; cout << "<=" << endl;}
+cmd         : cmd_var         {$$ = $1; /* cout << "<=" << endl; */}
             | cmd_atrib       {$$ = $1;}
             | cmd_func_call   {$$ = $1;}
-            | cmd_return      {$$ = $1; cout << "return" << endl;}
+            | cmd_return      {$$ = $1; /* cout << "return" << endl; */}
             | cmd_flux_ctrl   {$$ = $1;}
-            | body            {$$ = $1; cout << "body" << endl;}
+            | body            {$$ = $1; /* cout << "body" << endl; */}
 
             ;
 
@@ -211,7 +225,27 @@ lit             : TK_LIT_INT   {$$ = $1;}
                 | TK_LIT_FALSE {$$ = $1;}
                 ;
 
-id_label: TK_IDENTIFICADOR {$$ = $1;}
+id_label: TK_IDENTIFICADOR {
+            Symbol new_data{
+                  $1->get_line_num(),
+                  Nature::ID,
+                  $1->get_tk_value(),
+                  $1
+            };
+            SymbolList new_entry{
+                  $1->get_tk_value(),
+                  new_data
+            };
+            //Need to check if viable create the variable
+            if(stack_table.value_declared($1->get_tk_value())){
+                  throw_error_message ($1, ERR_DECLARED);
+                  exit(ERR_DECLARED);
+            }
+            else{
+                  stack_table.create_variable_entry($1->get_tk_value(), new_data);
+            }
+            delete $1;
+        }
         ;     
 
 
@@ -301,7 +335,11 @@ list_arg    : list_arg ',' expr {$$ = $3; $$->add_child($1);}
             ;
 
 
-cmd_atrib   : id_label '=' expr {$$ = $2; $$->add_child($1); $$->add_child($3);}
+cmd_atrib   : id_label '=' expr {
+                  $$ = $2; 
+                  $$->add_child($1); 
+                  $$->add_child($3);
+            }
             ;
 
 cmd_return  : TK_PR_RETURN expr {$$ = $1; $$->add_child($2);}
@@ -319,4 +357,44 @@ int yyerror (const char *message)
 {
     printf("Error line %d: %s\n", get_line_number(), message);
     return 1;
+}
+
+void throw_error_message (AstNode* node, int error_code) {
+    int line_number = node->get_line_num();
+    string token_val = node->formatstring();
+    string token_type;
+   
+    
+    NodeType node_type = node->get_type_node();
+
+    switch(node_type){
+        case NodeType::BOOL_TYPE:
+            token_type = "bool";
+            break;
+        case NodeType::INT_TYPE:
+            token_type = "int";
+            break;
+        case NodeType::FLOAT_TYPE:
+            token_type = "float";
+        default:
+            token_type = "Algo deu errado.";
+    }
+
+    switch(error_code){
+      case ERR_DECLARED:
+            cout << "[error found on line " << line_number
+                  << "] variable " << token_val << " already be declared." << endl;
+      case ERR_UNDECLARED:
+            cout << "[error found on line " << line_number
+                  << "] variable " << token_type << " >> wasn't declared." << endl;
+      case ERR_VARIABLE:
+            cout << "[error found on line " << line_number
+                  << "] inappropriate usage of variable " << token_type << "." << endl;
+      case ERR_FUNCTION:
+            cout << "[error found on line " << line_number
+                  << "] inappropriate usage of function " << token_type << "." << endl;
+      default:
+            cout << "[error found on line " << line_number
+                  << "] conversion " << token_type << " >> undentified error." << endl;
+    }
 }

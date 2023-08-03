@@ -27,10 +27,6 @@ void AstNode::add_child(AstNode* child) {
     }
 }
 
-TkType AstNode::get_type(){
-    return this->lex.token_type;
-}
-
 string AstNode::formatstring() {
         try{
             switch (this->lex.token_type) {
@@ -108,10 +104,10 @@ int checkAtrib(shared_ptr<AstNode> node){
     if (node != nullptr)
         if (node->lex.token_val.find("<="))
             return 1;
-        else
-            return 0;
+    return 0;
 }
 
+/*
 shared_ptr<AstNode> lastNode(shared_ptr<AstNode> node){
     
     if(node->children.empty()){
@@ -120,7 +116,7 @@ shared_ptr<AstNode> lastNode(shared_ptr<AstNode> node){
 
     shared_ptr<AstNode> last_element = node->children.back();
 
-/*  == TODO TOMORROW
+  == TODO TOMORROW
     while(node->children->lex.token_type != TkType::TK_ID){
         cout << "AAAAAAAAAAAAAAAAAAAAAAAA" << endl;
     }
@@ -141,6 +137,5 @@ shared_ptr<AstNode> lastNode(shared_ptr<AstNode> node){
         valor = nodo->filho[ultimo]->lexico->valor;
     }
     return nodo;
-*/
 }
-
+*/

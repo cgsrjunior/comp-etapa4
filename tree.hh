@@ -5,6 +5,14 @@
 
 using namespace std;
 
+//Enum for the new field specified in E4
+enum class NodeType{
+    INT_TYPE,
+    FLOAT_TYPE,
+    BOOL_TYPE,
+    ERROR_TYPE
+};
+
 enum class TkType {
     TK_SP_CHAR, // char
     TK_PR, // std::string
@@ -30,18 +38,28 @@ struct AstNode {
         vector<shared_ptr<AstNode>> children;
         bool func_call = false;
 
+        //This field will determined by the operation of the node if necessary
+        NodeType type;
+
+        //Gets and sets for the new type field defined in E4
+        inline NodeType get_type_node()                { return this->type; }
+        inline void set_type_node(NodeType new_type)   { this->type = new_type; }
+
+        //Create new gets and sets for token_value
+        inline string get_tk_value()                   { return this->lex.token_val; }
+        inline void   set_tk_value(string token_value) { this->lex.token_val = token_value; }
+
+        //Function for getting line number of current command of ast
+        inline int get_line_num() { return this->lex.line_number; }
+
         //Constructor - create only node without child
         AstNode(int number, TkType token_tp, string value);
-
         //Function to add child
         void add_child(AstNode *node);
-
         //Convert labels into string
         string formatstring();
-
         void reg_func_call(bool value);
 
-        TkType get_type();
 };
 
 //Smart pointer for the tree
