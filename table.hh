@@ -47,9 +47,9 @@ struct StackTable {
 
     int find_symbol_table(string token_value); //Returned the index found in the table
 
+    Symbol get_symbol_occurence(string token_value);
 
-
-    //Not working as expected
+    //Working fine for tests
     bool value_declared(string value);
 
     //Check declarations for raise ERR_DECLARED/UNDECLARED
@@ -58,5 +58,7 @@ struct StackTable {
 
     Symbol get_symbol_table(string value);
 };
+
+int check_bad_attrib(Nature expected, Nature received);
 
 TkType inference_type(TkType id_type_1, TkType id_type_2);

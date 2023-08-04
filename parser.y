@@ -255,8 +255,24 @@ cmd_flux_ctrl   : TK_PR_IF '(' expr ')' body {$$ = $1; $$->add_child($3); $$->ad
                 | TK_PR_WHILE '(' expr ')' body {$$ = $1; $$->add_child($3); $$->add_child($5);}
 
 
-cmd_func_call: name_func '(' list_arg ')'    {$$ = $1; $$->reg_func_call(true); $$->add_child($3);}
-             ;
+cmd_func_call: name_func {
+                  //Need to check if function exists
+                  if(stack_table.value_declared($1->get_tk_value())){
+                        //Need to pick the first occurence on table
+                        Symbol s = stack_table.get_symbol_occurence($1->get_tk_value());
+                        int check_symbol = check_bad_attrib(s.nature, Nature::FUNC);
+                        if(check_symbol > 0){
+                              throw_error_message($1, check_symbol);
+                              exit(check_symbol);
+                        }
+                  }
+                  else{
+                        throw_error_message ($1, ERR_UNDECLARED);
+                        exit(ERR_UNDECLARED);
+                  }
+            } 
+            '(' list_arg ')' {$$ = $1; $$->reg_func_call(true); $$->add_child($4);}
+            ;
 
 func_call_param : name_func '(' list_arg ')' {$$ = $1; $$->add_child($3);}
                 ;
@@ -339,6 +355,16 @@ cmd_atrib   : id_label '=' expr {
                   $$ = $2; 
                   $$->add_child($1); 
                   $$->add_child($3);
+                  //First we need to check if the variable was created before we make the atribution command
+                  if(stack_table.value_declared($1->get_tk_value())){
+                        //If everything are correct, now we put the attribution into the stack_table
+                        $$->set_type_node($1->get_type_node());
+                  }
+                  else{
+                        throw_error_message ($1, ERR_UNDECLARED);
+                        exit(ERR_UNDECLARED);
+                  }
+                  delete $1;
             }
             ;
 

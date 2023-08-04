@@ -18,6 +18,16 @@ int StackTable::find_symbol_table(string token_value) {
     return i;
 }
 
+Symbol StackTable::get_symbol_occurence(string token_value){
+    int i = this->find_symbol_table(token_value);
+    if (i <= 0){
+        exit(ERR_UNDECLARED);
+    }
+    else{
+        //This will return a symbol structure
+        return this->stack_table[i].data;
+    }
+}
 
 //This function should be used to check if we launch a declared or undeclared
 // variable error
@@ -50,7 +60,18 @@ void StackTable::create_atribution_entry(string token_value, Symbol ast_symbol){
     }   
 }
 
-
+int check_bad_attrib(Nature expected, Nature received) {
+    if (expected != received)
+        switch (expected) {
+            case Nature::LIT: //Omissão de warning
+                return 0;
+            case Nature::ID:
+                return ERR_VARIABLE;
+            case Nature::FUNC:
+                return ERR_FUNCTION;
+        }
+    return 0; //Result expected
+}
 
 TkType inference_type (TkType id_type_1, TkType id_type_2) {
 /*
