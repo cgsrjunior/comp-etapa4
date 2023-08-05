@@ -35,7 +35,7 @@ bool StackTable::value_declared(string value){
     return find_symbol_table(value) >= 0;
 }
 
-void StackTable::create_variable_entry(string token_value, Symbol ast_symbol){
+void StackTable::create_table_entry(string token_value, Symbol ast_symbol){
     //Check if variable exists before and in case of non-existant,
     //create the variable entry in the stack
     SymbolList new_data{
@@ -73,7 +73,7 @@ int check_bad_attrib(Nature expected, Nature received) {
     return 0; //Result expected
 }
 
-TkType inference_type (TkType id_type_1, TkType id_type_2) {
+NodeType inference_type (NodeType id_type_1, NodeType id_type_2) {
 /*
  *  Dado dois simbolos, faz inferência e retorna o tipo.
  */
@@ -81,15 +81,15 @@ TkType inference_type (TkType id_type_1, TkType id_type_2) {
     if (id_type_1 == id_type_2) {
         return id_type_1;
     }
-    else if (id_type_1 == TkType::TK_LIT_FLOAT && id_type_2 == TkType::TK_LIT_INT){
-        return TkType::TK_LIT_FLOAT;
+    else if (id_type_1 == NodeType::FLOAT_TYPE && id_type_2 == NodeType::INT_TYPE){
+        return NodeType::FLOAT_TYPE;
     }        
-    else if (id_type_1 == TkType::TK_LIT_BOOL && id_type_2 == TkType::TK_LIT_INT){
-        return TkType::TK_LIT_INT;
+    else if (id_type_1 == NodeType::BOOL_TYPE && id_type_2 == NodeType::INT_TYPE){
+        return NodeType::INT_TYPE;
     }
-    else if (id_type_1 == TkType::TK_LIT_BOOL && id_type_2 == TkType::TK_LIT_FLOAT){
-        return TkType::TK_LIT_FLOAT;
+    else if (id_type_1 == NodeType::BOOL_TYPE && id_type_2 == NodeType::FLOAT_TYPE){
+        return NodeType::FLOAT_TYPE;
     }
     else
-         return TkType::TK_TYPE_ERROR;
+         return NodeType::ERROR_TYPE;
 }

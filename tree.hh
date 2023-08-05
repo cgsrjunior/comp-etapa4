@@ -62,6 +62,9 @@ struct AstNode {
 
 };
 
+//Convert node label to string
+string nodetype_to_string(NodeType node);
+
 //Smart pointer for the tree
 typedef shared_ptr<AstNode> smart_pointer;
 

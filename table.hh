@@ -21,7 +21,7 @@ enum class Nature {
 struct Symbol {
     int line;
     Nature nature;
-    string type;
+    string type; //TODO check this after finished
     AstNode* data;
 };
 
@@ -53,7 +53,7 @@ struct StackTable {
     bool value_declared(string value);
 
     //Check declarations for raise ERR_DECLARED/UNDECLARED
-    void create_variable_entry(string token_value, Symbol ast_symbol);
+    void create_table_entry(string token_value, Symbol ast_symbol);
     void create_atribution_entry(string token_value, Symbol ast_symbol);
 
     Symbol get_symbol_table(string value);
@@ -61,4 +61,4 @@ struct StackTable {
 
 int check_bad_attrib(Nature expected, Nature received);
 
-TkType inference_type(TkType id_type_1, TkType id_type_2);
+NodeType inference_type(NodeType id_type_1, NodeType id_type_2);

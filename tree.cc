@@ -107,6 +107,22 @@ int checkAtrib(shared_ptr<AstNode> node){
     return 0;
 }
 
+string nodetype_to_string(NodeType node_type){
+
+    //Since we need this to put the type on the symbol table
+    //This should be working
+    switch(node_type){
+        case NodeType::BOOL_TYPE:
+            return "bool";
+        case NodeType::INT_TYPE:
+            return "int";
+        case NodeType::FLOAT_TYPE:
+            return "float";
+        default:
+            return "Algo deu errado.";
+    }
+}
+
 /*
 shared_ptr<AstNode> lastNode(shared_ptr<AstNode> node){
     

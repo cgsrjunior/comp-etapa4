@@ -140,7 +140,21 @@ type        : TK_PR_INT   {$$ = nullptr;}
             | TK_PR_BOOL  {$$ = nullptr;}
             ;
 
-func        : name_func '(' list_param ')' TK_OC_MAP type body {$$ = $1; $$->add_child($7);}
+func        : TK_IDENTIFICADOR {
+                  if(stack_table.value_declared($1->get_tk_value())){
+                        throw_error_message($1, ERR_DECLARED);
+                        exit(ERR_DECLARED);
+                  }
+                  else{
+                        Symbol simbol{
+                              $1->get_line_num(),
+                              Nature::FUNC,
+                              $1->get_tk_value(),
+                              $1
+                        };
+                        stack_table.create_table_entry($1->get_tk_value(),simbol);
+                  }
+            } '(' list_param ')' TK_OC_MAP type body {$$ = $1; $$->add_child($8); delete $1;}
             ;
 
 
@@ -150,7 +164,7 @@ list_param  : list_param ',' id_param {$$ = nullptr;}
             ;
 
 
-body        : '{' list_cmd '}' {$$ = $2;}
+body        : {stack_table.create_new_stack();}'{' list_cmd '}' {$$ = $3; stack_table.pop_table();}
             ;
 
 
@@ -219,11 +233,55 @@ id_atrib        : id_label {$$ = nullptr;}
                 ;
 
 
-lit             : TK_LIT_INT   {$$ = $1;}
-                | TK_LIT_FLOAT {$$ = $1;}
-                | TK_LIT_TRUE  {$$ = $1;}
-                | TK_LIT_FALSE {$$ = $1;}
-                ;
+lit             : TK_LIT_INT   {
+                  $$ = $1;
+                  $$->set_type_node(NodeType::INT_TYPE);
+                  Symbol lit_type{
+                        $1->get_line_num(),
+                        Nature::LIT,
+                        nodetype_to_string($1->get_type_node()),
+                        $1
+                  };
+                  stack_table.create_table_entry($1->get_tk_value(),lit_type);
+
+            }
+                | TK_LIT_FLOAT {
+                  $$ = $1;
+                  $$->set_type_node(NodeType::FLOAT_TYPE);
+                  Symbol lit_type{
+                        $1->get_line_num(),
+                        Nature::LIT,
+                        nodetype_to_string($1->get_type_node()),
+                        $1
+                  };
+                  stack_table.create_table_entry($1->get_tk_value(),lit_type);
+
+            }
+                | TK_LIT_TRUE  {
+                  $$ = $1;
+                  $$->set_type_node(NodeType::BOOL_TYPE);
+                  Symbol lit_type{
+                        $1->get_line_num(),
+                        Nature::LIT,
+                        nodetype_to_string($1->get_type_node()),
+                        $1
+                  };
+                  stack_table.create_table_entry($1->get_tk_value(),lit_type);
+
+            }
+                | TK_LIT_FALSE {
+                  $$ = $1;
+                  $$->set_type_node(NodeType::BOOL_TYPE);
+                  Symbol lit_type{
+                        $1->get_line_num(),
+                        Nature::LIT,
+                        nodetype_to_string($1->get_type_node()),
+                        $1
+                  };
+                  stack_table.create_table_entry($1->get_tk_value(),lit_type);
+
+            }
+            ;
 
 id_label: TK_IDENTIFICADOR {
             Symbol new_data{
@@ -242,7 +300,7 @@ id_label: TK_IDENTIFICADOR {
                   exit(ERR_DECLARED);
             }
             else{
-                  stack_table.create_variable_entry($1->get_tk_value(), new_data);
+                  stack_table.create_table_entry($1->get_tk_value(), new_data);
             }
             delete $1;
         }
@@ -250,7 +308,11 @@ id_label: TK_IDENTIFICADOR {
 
 
 
-cmd_flux_ctrl   : TK_PR_IF '(' expr ')' body {$$ = $1; $$->add_child($3); $$->add_child($5);}
+cmd_flux_ctrl   : TK_PR_IF '(' expr ')' body {
+                        $$ = $1;
+                        $$->add_child($3);
+                        $$->add_child($5);
+                }
                 | TK_PR_IF '(' expr ')' body TK_PR_ELSE body {$$ = $1; $$->add_child($3); $$->add_child($5); $$->add_child($7);}
                 | TK_PR_WHILE '(' expr ')' body {$$ = $1; $$->add_child($3); $$->add_child($5);}
 
@@ -308,33 +370,65 @@ bin_sev_expr: TK_OC_OR {$$ = $1;}
              ;
 
 expr: expr_1 {$$ = $1;} 
-    | expr bin_sev_expr expr_1 {$$ = $2; $$->add_child($1); $$->add_child($3);}
+    | expr bin_sev_expr expr_1 {
+            $$ = $2; 
+            $$->add_child($1); 
+            $$->add_child($3);
+            $$->set_type_node(inference_type($1->get_type_node(),$3->get_type_node()));
+      }
     | {$$ = nullptr;}
     ;
 
 expr_1: expr_2 {$$ = $1;}
-      | expr_1 bin_six_expr expr_2 {$$ = $2; $$->add_child($1); $$->add_child($3);}
+      | expr_1 bin_six_expr expr_2 {
+            $$ = $2; 
+            $$->add_child($1); 
+            $$->add_child($3);
+            $$->set_type_node(inference_type($1->get_type_node(),$3->get_type_node()));
+      }
       ;
 
 expr_2: expr_3 {$$ = $1;}
-      | expr_2 bin_fif_expr expr_3 {$$ = $2; $$->add_child($1); $$->add_child($3);}
+      | expr_2 bin_fif_expr expr_3 {
+            $$ = $2; $$->add_child($1); 
+            $$->add_child($3);
+            $$->set_type_node(inference_type($1->get_type_node(),$3->get_type_node()));
+      }
       ;
 
 expr_3: expr_4                     {$$ = $1;}
-      | expr_3 bin_fou_expr expr_4 {$$ = $2; $$->add_child($1); $$->add_child($3);}
+      | expr_3 bin_fou_expr expr_4 {
+                  $$ = $2; $$->add_child($1); 
+                  $$->add_child($3);
+                  $$->set_type_node(inference_type($1->get_type_node(),$3->get_type_node()));
+            }
       ;
 
 expr_4: expr_5                     {$$ = $1;}
-      | expr_4 bin_thr_expr expr_5 {$$ = $2; $$->add_child($1); $$->add_child($3);}
+      | expr_4 bin_thr_expr expr_5 {
+            $$ = $2; 
+            $$->add_child($1); 
+            $$->add_child($3);
+            $$->set_type_node(inference_type($1->get_type_node(),$3->get_type_node()));
+      }
       ;
 
 expr_5: unary_expr                     {$$ = $1;}
-      | expr_5 bin_sec_expr unary_expr {$$ = $2; $$->add_child($1); $$->add_child($3);}
+      | expr_5 bin_sec_expr unary_expr {
+            $$ = $2; 
+            $$->add_child($1); 
+            $$->add_child($3);
+            $$->set_type_node(inference_type($1->get_type_node(),$3->get_type_node()));
+      }
       ;
 
 unary_expr: parenthesis_prec               {$$ = $1;}
-          | unary_operand parenthesis_prec {$$ = $1; $$->add_child($2); /* cout << $2 << endl; */}
-          ;
+          | unary_operand parenthesis_prec {
+            $$ = $1; 
+            $$->add_child($2);
+            $$->set_type_node($2->get_type_node());
+      }
+      ;
 
 parenthesis_prec    :  operand      {$$ = $1;}
                     | '(' expr ')'  {$$ = $2;}
@@ -375,8 +469,10 @@ cmd_return  : TK_PR_RETURN expr {$$ = $1; $$->add_child($2);}
 name_func: TK_IDENTIFICADOR {$$ = $1;}
          ;     
 
-id_param: type TK_IDENTIFICADOR {$$ = nullptr; delete $2;}
-        ;
+id_param: type id_label {
+            $$ = nullptr; delete $2;
+      }
+      ;
 
 %%
 int yyerror (const char *message)
