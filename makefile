@@ -6,12 +6,12 @@
 # Makefile for single compiler call
 
 FLAGS=-Wall -g
-COMP=g++ -std=c++17
-
-etapa2: compile_font
-	${COMP} ${FLAGS} -o etapa3 lex.yy.o parser.tab.o tree.o main.o -lfl
+COMP=g++-10 -std=c++20
+ 
+etapa4: compile_font
+	${COMP} ${FLAGS} -o etapa4 lex.yy.o parser.tab.o table.o tree.o main.o -lfl
 compile_font: parser.tab.c lex.yy.c
-	${COMP} ${FLAGS} -c parser.tab.c lex.yy.c tree.cc main.c	
+	${COMP} ${FLAGS} -c parser.tab.c lex.yy.c main.c tree.cc table.cc
 parser.tab.c: parser.y
 	bison -d parser.y
 lex.yy.c: scanner.l
@@ -19,4 +19,4 @@ lex.yy.c: scanner.l
 
 
 clean:
-	rm *.o lex.yy.c parser.tab.* *.hh.gch etapa2
+	rm *.o lex.yy.c* parser.tab.* *.hh.gch etapa*

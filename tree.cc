@@ -58,6 +58,7 @@ string AstNode::formatstring() {
         catch (const exception& er){
             std::cout << er.what() << endl;
         }
+    return this->lex.token_val;
 }
 
 void AstNode::reg_func_call(bool value){ 
@@ -99,3 +100,58 @@ void exporta(void* tree) {
     
 }
 
+int checkAtrib(shared_ptr<AstNode> node){
+    if (node != nullptr)
+        if (node->lex.token_val.find("<="))
+            return 1;
+    return 0;
+}
+
+string nodetype_to_string(NodeType node_type){
+
+    //Since we need this to put the type on the symbol table
+    //This should be working
+    switch(node_type){
+        case NodeType::BOOL_TYPE:
+            return "bool";
+        case NodeType::INT_TYPE:
+            return "int";
+        case NodeType::FLOAT_TYPE:
+            return "float";
+        default:
+            return "Algo deu errado.";
+    }
+}
+
+/*
+shared_ptr<AstNode> lastNode(shared_ptr<AstNode> node){
+    
+    if(node->children.empty()){
+        return node;
+    }
+
+    shared_ptr<AstNode> last_element = node->children.back();
+
+  == TODO TOMORROW
+    while(node->children->lex.token_type != TkType::TK_ID){
+        cout << "AAAAAAAAAAAAAAAAAAAAAAAA" << endl;
+    }
+
+
+    Tipo tipo = nodo->filho[ultimo]->lexico->tipo;
+    char valor = nodo->filho[ultimo]->lexico->valor;
+
+    while (tipo == OPERADOR_COMPOSTO  tipo == CARACTERE_ESPECIAL   tipo == PALAVRA_RESERVADA)
+    {
+        nodo = nodo->filho[ultimo];
+        if(nodo->num_filhos == 0)
+        {
+            break;
+        }
+        ultimo = nodo->num_filhos - 1;
+        tipo = nodo->filho[ultimo]->lexico->tipo;
+        valor = nodo->filho[ultimo]->lexico->valor;
+    }
+    return nodo;
+}
+*/
