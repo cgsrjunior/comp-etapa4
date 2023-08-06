@@ -123,6 +123,24 @@ string nodetype_to_string(NodeType node_type){
     }
 }
 
+NodeType string_to_nodetype(string node_type){
+
+    //Since we need this to put the type on the symbol table
+    //This should be working
+    if( node_type == "bool"){
+        return NodeType::BOOL_TYPE;
+    }
+    else if( node_type == "int"){
+        return NodeType::INT_TYPE;
+    }
+    else if( node_type == "float"){
+        return NodeType::FLOAT_TYPE;
+    }
+    else{
+        return NodeType::ERROR_TYPE;
+    }
+}
+
 /*
 shared_ptr<AstNode> lastNode(shared_ptr<AstNode> node){
     

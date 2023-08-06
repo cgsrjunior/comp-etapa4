@@ -92,6 +92,7 @@ StackTable stack_table{};
 %type<valor_lexico> id_label
 %type<valor_lexico> name_func
 %type<valor_lexico> id_param
+%type<valor_lexico> id_var_decl
 
 %start programa
 
@@ -154,7 +155,7 @@ func        : TK_IDENTIFICADOR {
                         };
                         stack_table.create_table_entry($1->get_tk_value(),simbol);
                   }
-            } '(' list_param ')' TK_OC_MAP type body {$$ = $1; $$->add_child($8); delete $1;}
+            } '(' list_param ')' TK_OC_MAP type body {$$ = $1; $$->add_child($8); /*delete $1;*/}
             ;
 
 
@@ -302,7 +303,7 @@ id_label: TK_IDENTIFICADOR {
             else{
                   stack_table.create_table_entry($1->get_tk_value(), new_data);
             }
-            delete $1;
+            /*delete $1;*/
         }
         ;     
 
@@ -445,22 +446,48 @@ list_arg    : list_arg ',' expr {$$ = $3; $$->add_child($1);}
             ;
 
 
-cmd_atrib   : id_label '=' expr {
-                  $$ = $2; 
-                  $$->add_child($1); 
-                  $$->add_child($3);
+cmd_atrib   : id_var_decl '=' expr {
                   //First we need to check if the variable was created before we make the atribution command
-                  if(stack_table.value_declared($1->get_tk_value())){
-                        //If everything are correct, now we put the attribution into the stack_table
-                        $$->set_type_node($1->get_type_node());
+                  try{
+                        if(!(stack_table.value_declared($1->get_tk_value()))){
+                              throw_error_message ($1, ERR_UNDECLARED);
+                              exit(ERR_UNDECLARED);
+                        }
+                        $$ = $2; 
+                        $$->add_child($1); 
+                        $$->add_child($3);
+                        /*delete $1;*/
                   }
-                  else{
-                        throw_error_message ($1, ERR_UNDECLARED);
-                        exit(ERR_UNDECLARED);
+                  catch(const exception& er)
+                  {
+                        cout<< "Exception caught: " << er.what() << endl;
                   }
-                  delete $1;
             }
             ;
+
+id_var_decl: TK_IDENTIFICADOR {
+            try{
+                  if (stack_table.value_declared($1->get_tk_value())) {
+                        $$ = $1; // Tem que ser var, se não é erro
+                        auto s = stack_table.get_symbol_occurence($1->get_tk_value());
+                        int exit_code = check_bad_attrib(s.nature, Nature::ID);
+                        if (exit_code > 0) {
+                              throw_error_message($1, exit_code);
+                              exit(exit_code);
+                        }
+                        $$->set_type_node(string_to_nodetype(s.type));
+                  }
+                  else{
+                        throw_error_message($1, ERR_UNDECLARED);
+                        exit(ERR_UNDECLARED);
+                  }
+            }
+            catch(const exception& er)
+            {
+                  cout<< "Exception caught: " << er.what() << endl;
+            }
+      }
+      ;
 
 cmd_return  : TK_PR_RETURN expr {$$ = $1; $$->add_child($2);}
             ;
@@ -470,7 +497,7 @@ name_func: TK_IDENTIFICADOR {$$ = $1;}
          ;     
 
 id_param: type id_label {
-            $$ = nullptr; delete $2;
+            $$ = nullptr; //delete $2;
       }
       ;
 
