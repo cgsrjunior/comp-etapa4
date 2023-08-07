@@ -142,7 +142,7 @@ type        : TK_PR_INT   {$$ = $1;}
 
 func        : TK_IDENTIFICADOR {
                   if(stack_table.value_declared($1->get_tk_value())){
-                        cout << "func ERR_DECLARED" << endl;
+                        //cout << "func ERR_DECLARED" << endl;
                         throw_error_message($1, ERR_DECLARED);
                         exit(ERR_DECLARED);
                   }
@@ -297,7 +297,7 @@ id_label: TK_IDENTIFICADOR {
             };
             //Need to check if viable create the variable
             if(stack_table.value_declared($1->get_tk_value())){
-                  cout << "id_label ERR_DECLARED" << endl;
+                  //cout << "id_label ERR_DECLARED" << endl;
                   throw_error_message ($1, ERR_DECLARED);
                   exit(ERR_DECLARED);
             }
