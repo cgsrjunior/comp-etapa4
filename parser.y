@@ -93,6 +93,7 @@ StackTable stack_table{};
 %type<valor_lexico> name_func
 %type<valor_lexico> id_param
 %type<valor_lexico> id_var_decl
+%type<valor_lexico> id_var
 
 %start programa
 
@@ -122,27 +123,26 @@ list_decl   : list_decl decl {
             | {$$ = nullptr;}
             ;
 
-decl        : var  {$$ = nullptr;}
+decl        : var ';' {$$ = nullptr;}
             | func {$$ = $1;}
             ;
 
-var         : type list_id ';' {
-              $$ = nullptr;
-
-            }
+/* Separar variaveis em listas por tipo */
+var         : type list_id {$$ = nullptr;}
             ;
 
 list_id     : list_id ',' id_label {$$ = nullptr;}
             | id_label {$$ = nullptr;}
             ;
 
-type        : TK_PR_INT   {$$ = nullptr;}
-            | TK_PR_FLOAT {$$ = nullptr;}
-            | TK_PR_BOOL  {$$ = nullptr;}
+type        : TK_PR_INT   {$$ = $1;}
+            | TK_PR_FLOAT {$$ = $1;}
+            | TK_PR_BOOL  {$$ = $1;}
             ;
 
 func        : TK_IDENTIFICADOR {
                   if(stack_table.value_declared($1->get_tk_value())){
+                        cout << "func ERR_DECLARED" << endl;
                         throw_error_message($1, ERR_DECLARED);
                         exit(ERR_DECLARED);
                   }
@@ -297,6 +297,7 @@ id_label: TK_IDENTIFICADOR {
             };
             //Need to check if viable create the variable
             if(stack_table.value_declared($1->get_tk_value())){
+                  cout << "id_label ERR_DECLARED" << endl;
                   throw_error_message ($1, ERR_DECLARED);
                   exit(ERR_DECLARED);
             }
@@ -435,11 +436,19 @@ parenthesis_prec    :  operand      {$$ = $1;}
                     | '(' expr ')'  {$$ = $2;}
                     ;
 
-operand     : id_label        {$$ = $1;}
+operand     : id_var        {$$ = $1;}
             | lit             {$$ = $1;}
             | func_call_param {$$ = $1;}
             ;
 
+id_var:     TK_IDENTIFICADOR {
+                  if(!(stack_table.value_declared($1->get_tk_value()))){
+                              //cout << "Entrei no id_var_decl" << endl;
+                              throw_error_message ($1, ERR_UNDECLARED);
+                              exit(ERR_UNDECLARED);
+                        }
+            }
+            ;
 
 list_arg    : list_arg ',' expr {$$ = $3; $$->add_child($1);}
             | expr {$$ = $1;}
@@ -450,6 +459,7 @@ cmd_atrib   : id_var_decl '=' expr {
                   //First we need to check if the variable was created before we make the atribution command
                   try{
                         if(!(stack_table.value_declared($1->get_tk_value()))){
+                              //cout << "Entrei no id_var_decl" << endl;
                               throw_error_message ($1, ERR_UNDECLARED);
                               exit(ERR_UNDECLARED);
                         }
@@ -472,12 +482,14 @@ id_var_decl: TK_IDENTIFICADOR {
                         auto s = stack_table.get_symbol_occurence($1->get_tk_value());
                         int exit_code = check_bad_attrib(s.nature, Nature::ID);
                         if (exit_code > 0) {
+                              //cout << "Entrei no id_var_decl" << endl;
                               throw_error_message($1, exit_code);
                               exit(exit_code);
                         }
                         $$->set_type_node(string_to_nodetype(s.type));
                   }
                   else{
+                        //cout << "Entrei no else id_var_decl" << endl;
                         throw_error_message($1, ERR_UNDECLARED);
                         exit(ERR_UNDECLARED);
                   }
@@ -512,36 +524,26 @@ void throw_error_message (AstNode* node, int error_code) {
     int line_number = node->get_line_num();
     string token_val = node->formatstring();
     string token_type;
-   
-    
-    NodeType node_type = node->get_type_node();
 
-    switch(node_type){
-        case NodeType::BOOL_TYPE:
-            token_type = "bool";
-            break;
-        case NodeType::INT_TYPE:
-            token_type = "int";
-            break;
-        case NodeType::FLOAT_TYPE:
-            token_type = "float";
-        default:
-            token_type = "Algo deu errado.";
-    }
+    //cout << token_val << endl;
 
     switch(error_code){
       case ERR_DECLARED:
             cout << "[error found on line " << line_number
-                  << "] variable " << token_val << " already be declared." << endl;
+                  << "] variable/function " << token_val << " already be declared." << endl;
+                  break;
       case ERR_UNDECLARED:
             cout << "[error found on line " << line_number
-                  << "] variable " << token_type << " >> wasn't declared." << endl;
+                  << "] variable/function " << token_val << " wasn't declared." << endl;
+                  break;
       case ERR_VARIABLE:
             cout << "[error found on line " << line_number
-                  << "] inappropriate usage of variable " << token_type << "." << endl;
+                  << "] inappropriate usage of variable " << token_val << "." << endl;
+                  break;
       case ERR_FUNCTION:
             cout << "[error found on line " << line_number
-                  << "] inappropriate usage of function " << token_type << "." << endl;
+                  << "] inappropriate usage of function " << token_val << "." << endl;
+                  break;
       default:
             cout << "[error found on line " << line_number
                   << "] conversion " << token_type << " >> undentified error." << endl;
